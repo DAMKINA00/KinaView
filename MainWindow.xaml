@@ -1,0 +1,125 @@
+﻿<Window x:Class="KinaView.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:KinaView"
+ Title="키나뷰" Width="1160" Height="820" MinWidth="640" MinHeight="420" Icon="Assets/KinaView.ico"
+ Background="#202020" Foreground="#F1F1F1" FontFamily="Segoe UI, Malgun Gothic" FontSize="12" UseLayoutRounding="True" SnapsToDevicePixels="True"
+ WindowStartupLocation="CenterScreen" AllowDrop="True" PreviewKeyDown="OnKeyDown" Drop="OnDrop" DragOver="OnDragOver">
+ <Window.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Theme.xaml"/></ResourceDictionary.MergedDictionaries>
+  <DrawingBrush x:Key="Checker" TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
+   <DrawingBrush.Drawing><DrawingGroup>
+    <GeometryDrawing Brush="#303030" Geometry="M0,0 H16 V16 H0 Z"/>
+    <GeometryDrawing Brush="#383838" Geometry="M0,0 H8 V8 H0 Z M8,8 H16 V16 H8 Z"/>
+   </DrawingGroup></DrawingBrush.Drawing>
+  </DrawingBrush>
+
+  <Style TargetType="ListBoxItem">
+   <Setter Property="Padding" Value="10,7"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+   <Setter Property="Foreground" Value="#DDDDDD"/>
+   <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Foreground" Value="#172A23"/></Trigger></Style.Triggers>
+  </Style>
+  </ResourceDictionary>
+ </Window.Resources>
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+  <Border x:Name="TopBar" Background="#F4F6F8" BorderBrush="#DCE1E7" BorderThickness="0,0,0,1" Height="36">
+   <DockPanel LastChildFill="True">
+    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0" IsHitTestVisible="False">
+     <Border Background="#E7ECF1" CornerRadius="5" Padding="9,3"><TextBlock x:Name="ZoomLabel" Text="맞춤" Foreground="#465465" FontSize="11" Typography.NumeralAlignment="Tabular"/></Border>
+     <Border Background="#D6DDE5" Width="1" Height="12" Margin="10,0"/>
+     <TextBlock x:Name="CountLabel" Foreground="#647080" VerticalAlignment="Center" FontSize="11" Typography.NumeralAlignment="Tabular"/>
+    </StackPanel>
+    <Menu x:Name="MainMenu" Margin="5,0" Background="Transparent" Foreground="#242424" VerticalAlignment="Center">
+     <MenuItem Header="파일" Tag="F">
+      <MenuItem Header="파일 열기…" InputGestureText="Ctrl+O" Click="OpenFileClick"/>
+      <MenuItem Header="폴더 열기…" InputGestureText="Ctrl+Shift+O" Click="OpenFolderClick"/>
+      <Separator/>
+      <MenuItem x:Name="PreviousButton" Header="이전 이미지" InputGestureText="←" Click="PreviousClick"/>
+      <MenuItem x:Name="NextButton" Header="다음 이미지" InputGestureText="→" Click="NextClick"/>
+      <Separator/>
+      <MenuItem Header="파일 위치 열기" InputGestureText="Ctrl+Enter" Click="RevealClick"/>
+      <MenuItem Header="닫기" InputGestureText="Alt+F4" Click="CloseClick"/>
+     </MenuItem>
+     <MenuItem x:Name="InfoMenu" Header="정보" IsCheckable="True" Click="InfoClick" ToolTip="파일 정보 표시 / 숨기기 · Tab"/>
+     <MenuItem Header="보기" Tag="V">
+      <MenuItem Header="화면 맞춤" InputGestureText="1" Click="FitClick"/>
+      <MenuItem Header="실제 크기 · 100%" InputGestureText="0" Click="ActualClick"/>
+      <MenuItem Header="확대" InputGestureText="+" Click="ZoomInClick"/>
+      <MenuItem Header="축소" InputGestureText="−" Click="ZoomOutClick"/>
+      <Separator/>
+      <MenuItem x:Name="SidebarMenu" Header="파일 목록" IsCheckable="True" InputGestureText="Ctrl+B" Click="SidebarClick"/>
+      <MenuItem Header="전체화면" InputGestureText="F11" Click="FullscreenClick"/>
+     </MenuItem>
+     <MenuItem Header="이미지" Tag="I">
+      <MenuItem Header="오른쪽으로 회전" InputGestureText="R" Click="RotateClick"/>
+      <MenuItem Header="이미지 복사" InputGestureText="Ctrl+C" Click="CopyClick"/>
+      <Separator/>
+      <MenuItem x:Name="AnimationButton" Header="GIF 일시 정지" InputGestureText="Space" IsEnabled="False" Click="AnimationClick"/>
+      <MenuItem x:Name="SlideshowButton" Header="슬라이드쇼" InputGestureText="F5" Click="SlideshowClick"/>
+     </MenuItem>
+     <MenuItem x:Name="CompareMenu" Header="비교" Tag="C">
+      <MenuItem Header="A | B 비교 시작" Click="StartCompareClick"/>
+      <MenuItem x:Name="AddCompareMenu" Header="패널 추가 · 최대 A | B | C | D" Click="AddCompareClick" IsEnabled="False"/>
+      <MenuItem x:Name="RemoveCompareMenu" Header="마지막 패널 제거" Click="RemoveCompareClick" IsEnabled="False"/>
+      <Separator/>
+      <MenuItem x:Name="SelectAllCompareMenu" Header="모든 패널 함께 조작" Click="SelectAllCompareClick" IsEnabled="False"/>
+      <MenuItem x:Name="EndCompareMenu" Header="비교 끝내기" Click="EndCompareClick" IsEnabled="False"/>
+     </MenuItem>
+     <MenuItem Header="도구" Tag="T">
+      <MenuItem Header="탐색기·연결 프로그램에 등록" Click="RegisterClick"/>
+      <MenuItem Header="탐색기 등록 해제" Click="UnregisterClick"/>
+      <MenuItem Header="Windows 기본 앱 설정" Click="DefaultAppsClick"/>
+      <Separator/>
+      <MenuItem Header="도움말 및 지원 형식" InputGestureText="F1" Click="HelpClick"/>
+     </MenuItem>
+    </Menu>
+   </DockPanel>
+  </Border>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition x:Name="SidebarColumn" Width="0"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Border x:Name="Sidebar" Visibility="Collapsed" Background="#292929" BorderBrush="#393939" BorderThickness="0,0,1,0">
+    <DockPanel>
+     <StackPanel DockPanel.Dock="Top" Margin="12,14">
+      <TextBlock x:Name="FolderLabel" Text="폴더" TextTrimming="CharacterEllipsis"/>
+      <TextBlock x:Name="FolderCount" Foreground="#A0A0A0" FontSize="11" Margin="0,5,0,0"/>
+     </StackPanel>
+     <ListBox x:Name="FileList" Background="Transparent" BorderThickness="0" SelectionChanged="FileSelectionChanged"
+      ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" AutomationProperties.Name="폴더의 이미지 목록">
+      <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/></DataTemplate></ListBox.ItemTemplate>
+     </ListBox>
+    </DockPanel>
+   </Border>
+   <Grid x:Name="NormalView" Grid.Column="1" ClipToBounds="True">
+    <ScrollViewer x:Name="Viewport" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Focusable="False"
+     SizeChanged="ViewportChanged" ScrollChanged="ViewportScrolled" PreviewMouseWheel="OnWheel" PreviewMouseLeftButtonDown="PanStart" PreviewMouseMove="PanMove" PreviewMouseLeftButtonUp="PanEnd" LostMouseCapture="PanLost">
+     <Grid x:Name="ImageStage" Background="#202020">
+      <Border Background="{StaticResource Checker}" HorizontalAlignment="Center" VerticalAlignment="Center">
+       <Image x:Name="Picture" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+      </Border>
+     </Grid>
+    </ScrollViewer>
+    <StackPanel x:Name="Welcome" VerticalAlignment="Center" HorizontalAlignment="Center">
+     <Image Source="Assets/KinaView.ico" Width="64" Height="64" Margin="0,0,0,22"/>
+     <TextBlock Text="이미지를 끌어 놓으세요" FontSize="20" HorizontalAlignment="Center"/>
+     <TextBlock Text="또는 Ctrl+O로 파일 열기" Foreground="#A0A0A0" Margin="0,10,0,20" HorizontalAlignment="Center"/>
+     <Button Content="파일 열기" HorizontalAlignment="Center" Click="OpenFileClick"/>
+    </StackPanel>
+    <Border x:Name="InfoOverlay" Visibility="Collapsed" IsHitTestVisible="False" Background="#70000000" CornerRadius="4" Padding="12,10" Margin="12"
+      HorizontalAlignment="Left" VerticalAlignment="Top" MaxWidth="460">
+     <StackPanel>
+      <TextBlock x:Name="ImageName" Text="열린 이미지 없음" TextWrapping="Wrap" FontWeight="SemiBold"/>
+      <TextBlock x:Name="Status" TextWrapping="Wrap" Margin="0,7,0,0" LineHeight="20"/>
+      <TextBlock x:Name="ModifiedLabel" Margin="0,4,0,0"/>
+      <TextBlock x:Name="AnimationLabel" Foreground="#C4D9D1" Margin="0,4,0,0"/>
+     </StackPanel>
+    </Border>
+    <local:OverviewMap x:Name="Overview"/>
+
+   </Grid>
+   <Grid x:Name="ComparisonHost" Grid.ColumnSpan="2" Visibility="Collapsed"/>
+    <Border x:Name="Notice" Grid.ColumnSpan="2" Visibility="Collapsed" VerticalAlignment="Bottom" HorizontalAlignment="Center" Background="#E82B3933" CornerRadius="5" Padding="18,12" Margin="24" MaxWidth="560">
+     <TextBlock x:Name="NoticeText" TextWrapping="Wrap" Foreground="#F0F4F1"/>
+    </Border>
+  </Grid>
+ </Grid>
+</Window>

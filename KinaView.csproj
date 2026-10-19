@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>KinaView</AssemblyName>
+    <RootNamespace>KinaView</RootNamespace>
+    <Product>키나뷰</Product>
+    <Description>독립 Windows 이미지 뷰어</Description>
+    <Version>0.4.2</Version>
+    <PlatformTarget>x64</PlatformTarget>
+    <DefaultItemExcludes>$(DefaultItemExcludes);evidence\**;publish*\**;artifacts\**</DefaultItemExcludes>
+    <ApplicationIcon>Assets\KinaView.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q16-HDRI-OpenMP-x64" Version="15.0.0" />
+    <Resource Include="Assets\KinaView.ico" />
+    <None Update="README.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="ThirdPartyNotices.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

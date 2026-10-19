@@ -1,0 +1,17 @@
+[
+  {
+    "File": "DSC8695.dng",
+    "URL": "https://raw.githubusercontent.com/dlemstra/Magick.NET/9ea25d2725d2f1fdfb4ed9a23443afc21aa2a8cb/tests/Magick.NET.Tests/Images/Coders/DSC8695.dng",
+    "SHA256": "2CF9CBFDB23108309FA8CA5D5E75651996A417FFF8AC187D772C9E440FB622ED"
+  },
+  {
+    "File": "StillLife.cr2",
+    "URL": "https://raw.githubusercontent.com/dlemstra/Magick.NET/9ea25d2725d2f1fdfb4ed9a23443afc21aa2a8cb/samples/Magick.NET.Samples/Files/StillLife.cr2",
+    "SHA256": "2E0133B2FE73AA7BB1AC5EC742A73727F4ADD8B19ADD81707C1C83145781B4A1"
+  },
+  {
+    "File": "layers.psd",
+    "URL": "https://raw.githubusercontent.com/dlemstra/Magick.NET/9ea25d2725d2f1fdfb4ed9a23443afc21aa2a8cb/tests/Magick.NET.Tests/Images/Coders/layer-styles-sample.psd",
+    "SHA256": "583882D84BC2C85FA5D8CFD9AC9FC6352A13FF029B50F92B3C997C397DBB69FA"
+  }
+]
