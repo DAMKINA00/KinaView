@@ -132,6 +132,7 @@ internal static class SelfTest
             Check(hashes.All(kv => SHA256.HashData(File.ReadAllBytes(kv.Key)).SequenceEqual(kv.Value)), "Original fixture bytes unchanged after all viewer actions");
             await FormatTests.Run(window, output, Check);
             await ComparisonTests.Run(window, output, list, bad, Check);
+            await ComicViewTests.Run(window, output, Check);
             var mainMenu = (System.Windows.Controls.Menu)window.FindName("MainMenu");
             var fileMenu = (System.Windows.Controls.MenuItem)mainMenu.Items[0];
             Check(window.OpenMenu(System.Windows.Input.Key.F), "Restyled menu retains F shortcut mapping without visible suffix");

@@ -47,6 +47,7 @@
       <MenuItem Header="확대" InputGestureText="+" Click="ZoomInClick"/>
       <MenuItem Header="축소" InputGestureText="−" Click="ZoomOutClick"/>
       <Separator/>
+      <MenuItem x:Name="ComicMenu" Header="만화 보기" IsCheckable="True" IsChecked="False" InputGestureText="Ctrl+M" Click="ComicClick" ToolTip="만화 이미지 보정 보기"/>
       <MenuItem x:Name="SidebarMenu" Header="파일 목록" IsCheckable="True" InputGestureText="Ctrl+B" Click="SidebarClick"/>
       <MenuItem Header="전체화면" InputGestureText="F11" Click="FullscreenClick"/>
      </MenuItem>
@@ -54,7 +55,7 @@
       <MenuItem Header="오른쪽으로 회전" InputGestureText="R" Click="RotateClick"/>
       <MenuItem Header="이미지 복사" InputGestureText="Ctrl+C" Click="CopyClick"/>
       <Separator/>
-      <MenuItem x:Name="AnimationButton" Header="GIF 일시 정지" InputGestureText="Space" IsEnabled="False" Click="AnimationClick"/>
+      <MenuItem x:Name="AnimationButton" Header="GIF/WebP 일시 정지" InputGestureText="Space" IsEnabled="False" Click="AnimationClick"/>
       <MenuItem x:Name="SlideshowButton" Header="슬라이드쇼" InputGestureText="F5" Click="SlideshowClick"/>
      </MenuItem>
      <MenuItem x:Name="CompareMenu" Header="비교" Tag="C">
@@ -113,6 +114,10 @@
       <TextBlock x:Name="AnimationLabel" Foreground="#C4D9D1" Margin="0,4,0,0"/>
      </StackPanel>
     </Border>
+     <Border x:Name="ComicStatus" Visibility="Collapsed" IsHitTestVisible="False" Background="#B82A3038" CornerRadius="4" Padding="9,5"
+       HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18">
+      <TextBlock x:Name="ComicStatusText" Text="만화 보기 · 보정 중…" Foreground="#E8F2EE" FontSize="11"/>
+     </Border>
     <local:OverviewMap x:Name="Overview"/>
 
    </Grid>

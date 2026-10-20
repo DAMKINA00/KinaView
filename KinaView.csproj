@@ -9,7 +9,7 @@
     <RootNamespace>KinaView</RootNamespace>
     <Product>키나뷰</Product>
     <Description>독립 Windows 이미지 뷰어</Description>
-    <Version>0.4.2</Version>
+    <Version>0.4.3</Version>
     <PlatformTarget>x64</PlatformTarget>
     <DefaultItemExcludes>$(DefaultItemExcludes);evidence\**;publish*\**;artifacts\**</DefaultItemExcludes>
     <ApplicationIcon>Assets\KinaView.ico</ApplicationIcon>
@@ -19,5 +19,6 @@
     <Resource Include="Assets\KinaView.ico" />
     <None Update="README.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="ThirdPartyNotices.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Runtime\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

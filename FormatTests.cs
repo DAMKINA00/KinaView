@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using ImageMagick;
+using ImageMagick.Formats;
 using Microsoft.Win32;
 
 namespace KinaView;
@@ -20,11 +21,16 @@ internal static class FormatTests
             frames.Add(new MagickImage(MagickColors.Red, 20, 12) { AnimationDelay = 10, AnimationTicksPerSecond = 100, GifDisposeMethod = GifDisposeMethod.None });
             frames.Add(new MagickImage(MagickColors.Lime, 2, 2) { AnimationDelay = 20, AnimationTicksPerSecond = 100, Page = new MagickGeometry(2, 2, 20, 12), GifDisposeMethod = GifDisposeMethod.Previous });
             frames.Add(new MagickImage(MagickColors.Blue, 2, 2) { AnimationDelay = 30, AnimationTicksPerSecond = 100, Page = new MagickGeometry(8, 2, 20, 12), GifDisposeMethod = GifDisposeMethod.None });
-            frames[0].AnimationIterations = 0;
+            frames[0].AnimationIterations = 2;
             frames.Write(gif);
         }
+        using (var finite = new MagickImageCollection())
+        {
+            finite.Ping(gif);
+            check(finite[0].AnimationIterations == 2, "GIF finite loop metadata is preserved");
+        }
         var animation = ImageFiles.Load(gif);
-        check(animation.Animation?.Length == 3, "GIF decodes all frames");
+        check(animation.Animation?.Length == 3, "GIF finite loop still decodes all frames");
         var decoded = animation.Animation!;
         check(decoded.Select(f => f.DelayMilliseconds).SequenceEqual(new[] { 100, 200, 300 }), "GIF frame-specific timing");
         check(Pixel(decoded[0].Bitmap, 2, 2).SequenceEqual(new byte[] { 0, 0, 255, 255 }), "GIF first frame red");
@@ -35,6 +41,33 @@ internal static class FormatTests
         bool oversized = false;
         try { AdvancedImages.CheckAnimationSize(4000, 4000, 100); } catch (InvalidDataException) { oversized = true; }
         check(oversized, "Animation memory budget rejects oversized sequence");
+        string webp = Path.Combine(fixture, "animation.webp");
+        using (var frames = new MagickImageCollection())
+        {
+            frames.Add(new MagickImage(new MagickColor(Quantum.Max, 0, 0, Quantum.Max / 2), 20, 12) { AnimationDelay = 10, AnimationTicksPerSecond = 100, Quality = 100 });
+            frames.Add(new MagickImage(MagickColors.Lime, 20, 12) { AnimationDelay = 20, AnimationTicksPerSecond = 100, Quality = 100 });
+            frames.Add(new MagickImage(MagickColors.Blue, 20, 12) { AnimationDelay = 30, AnimationTicksPerSecond = 100, Quality = 100 });
+            frames[0].AnimationIterations = 2;
+            frames.Write(webp, new WebPWriteDefines { Lossless = true, AlphaQuality = 100 });
+        }
+        using (var finite = new MagickImageCollection())
+        {
+            finite.Ping(webp);
+            check(finite[0].AnimationIterations == 2, "WebP finite loop metadata is preserved");
+        }
+        var webpImage = ImageFiles.Load(webp);
+        using (var exclusive = File.Open(webp, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) check(exclusive.Length > 0, "Animated WebP releases source file");
+        check(webpImage.Animation?.Length == 3, "Animated WebP decodes all frames");
+        var webpDecoded = webpImage.Animation!;
+        check(webpDecoded.Select(f => f.DelayMilliseconds).SequenceEqual(new[] { 100, 200, 300 }), "WebP frame-specific timing");
+        check(Pixel(webpDecoded[0].Bitmap, 2, 2)[2] > 200 && Pixel(webpDecoded[0].Bitmap, 2, 2)[0] < 20, "WebP first frame red");
+        check(Pixel(webpDecoded[1].Bitmap, 2, 2)[1] > 200 && Pixel(webpDecoded[1].Bitmap, 2, 2)[0] < 20, "WebP second frame green");
+        var translucent = Pixel(webpDecoded[0].Bitmap, 2, 2);
+        check(translucent[2] > 100 && translucent[3] < 255, "WebP preserves translucent alpha");
+        string staticWebpPath = Path.Combine(fixture, "static.webp");
+        using (var still = new MagickImage(MagickColors.Gold, 20, 12)) still.Write(staticWebpPath);
+        var staticWebp = ImageFiles.Load(staticWebpPath);
+        check(staticWebp.Animation == null && staticWebp.FrameCount == 1, "Static WebP remains non-animated");
         await window.OpenPathAsync(gif);
         check(window.IsAnimating, "GIF automatically plays in live window");
         window.SetZoom(2);
@@ -49,6 +82,18 @@ internal static class FormatTests
         check(window.AnimationIndex == paused, "GIF continuously wraps");
         window.ToggleAnimation();
         check(window.IsAnimating, "GIF resumes");
+        await window.OpenPathAsync(webp);
+        check(window.IsAnimating, "Animated WebP automatically plays in live window");
+        window.ToggleAnimation();
+        int webpPaused = window.AnimationIndex;
+        await Task.Delay(240);
+        check(!window.IsAnimating && window.AnimationIndex == webpPaused, "WebP pause holds the current frame");
+        for (int i = 0; i < webpDecoded.Length; i++) window.AdvanceAnimation();
+        check(window.AnimationIndex == webpPaused, "WebP continuously wraps");
+        window.ToggleAnimation();
+        check(window.IsAnimating, "WebP resumes");
+        await window.OpenPathAsync(staticWebpPath);
+        check(!window.IsAnimating && window.Displayed != null, "Opening static WebP stops animation");
         string hdr = Path.Combine(fixture, "highlights.hdr");
         using (var stream = File.Create(hdr))
         {

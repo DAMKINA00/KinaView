@@ -8089,3 +8089,11 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+[ Display resize: Real-ESRGAN ncnn Vulkan / AnimeVideo v3 ]
+
+The bundled native helper and selected model files are in Runtime/RealESRGAN.
+Component licenses and notices (Real-ESRGAN MIT wrapper, BSD-3-Clause model,
+ncnn, libwebp, stb and dirent) are provided in that directory. See
+Runtime/RealESRGAN/PROVENANCE.md for the upstream release, file hashes,
+Microsoft OpenMP runtime terms and model selection.

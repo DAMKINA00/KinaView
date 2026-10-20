@@ -16,6 +16,15 @@ try {
     foreach ($name in @('KinaView.exe','coreclr.dll','hostfxr.dll','PresentationFramework.dll','vcomp140.dll')) {
         if (!(Test-Path -LiteralPath (Join-Path $publish $name))) { throw "Missing runtime file: $name" }
     }
+    $resizeRuntime = Join-Path $publish 'Runtime\RealESRGAN'
+    foreach ($name in @('realesrgan-ncnn-vulkan.exe','vcomp140.dll','LICENSE.txt','MODEL-LICENSE.txt','NCNN-LICENSE.txt','LIBWEBP-LICENSE.txt','STB-LICENSE.txt','DIRENT-LICENSE.txt','PROVENANCE.md')) {
+        if (!(Test-Path -LiteralPath (Join-Path $resizeRuntime $name))) { throw "Missing resize runtime file: $name" }
+    }
+    foreach ($scale in 2, 3, 4) {
+        foreach ($extension in 'bin', 'param') {
+            if (!(Test-Path -LiteralPath (Join-Path $resizeRuntime "models\realesr-animevideov3-x$scale.$extension"))) { throw "Missing resize model: x$scale.$extension" }
+        }
+    }
     $zip = Join-Path $release "KinaView-$version-Portable-x64.zip"
     Compress-Archive -Path "$publish\*" -DestinationPath $zip -CompressionLevel Optimal -Force
     & $Iscc "/DAppVersion=$version" 'installer\KinaView.iss'

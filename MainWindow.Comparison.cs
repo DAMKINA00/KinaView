@@ -16,7 +16,7 @@ public partial class MainWindow
     {
         if (Comparing) return;
         string? path = CurrentPath;
-        ++request; StopSlideshow(); resumeNormalAnimation = animationTimer.IsEnabled; animationTimer.Stop();
+        ++request; StopSlideshow(); resumeNormalAnimation = animationTimer.IsEnabled; animationTimer.Stop(); displayResizer.Clear();
         NormalView.Visibility = Visibility.Collapsed;
         SetSidebar(false); SidebarMenu.IsEnabled = false;
         ComparisonHost.Visibility = Visibility.Visible;
@@ -37,6 +37,7 @@ public partial class MainWindow
         pane.FitRequested += FitComparison;
         pane.ViewChanged += UpdateComparisonTitle;
         pane.ShowInfo(InfoMenu.IsChecked);
+        pane.SetComicMode(comicMode);
         panes.Add(pane); ComparisonHost.Children.Add(pane);
         ArrangeComparison();
     }

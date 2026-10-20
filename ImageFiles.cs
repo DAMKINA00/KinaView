@@ -23,9 +23,9 @@ internal static class ImageFiles
 
     internal static int Step(int index, int delta, int count) => count == 0 ? -1 : (int)(((long)index + delta % count + count) % count);
 
-    internal static double Fit(int width, int height, double viewportWidth, double viewportHeight)
+    internal static double Fit(int width, int height, double viewportWidth, double viewportHeight, double maximum = 16)
     {
-        return Math.Min(16, Math.Min(Math.Max(1, viewportWidth - 2) / width, Math.Max(1, viewportHeight - 2) / height));
+        return Math.Min(maximum, Math.Min(Math.Max(1, viewportWidth - 2) / width, Math.Max(1, viewportHeight - 2) / height));
     }
 
     internal static double RoundZoom(double value)

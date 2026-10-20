@@ -22,6 +22,10 @@
      </Grid>
     </ScrollViewer>
     <TextBlock x:Name="Message" Text="파일을 끌어 놓으세요" Foreground="#BBBBBB" TextWrapping="Wrap" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+     <Border x:Name="ComicStatus" Visibility="Collapsed" IsHitTestVisible="False" Background="#B82A3038" CornerRadius="4" Padding="9,5"
+       HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14">
+      <TextBlock x:Name="ComicStatusText" Text="만화 보기 · 보정 중…" Foreground="#E8F2EE" FontSize="11"/>
+     </Border>
     <Border x:Name="Info" Visibility="Collapsed" Background="#70000000" Padding="10" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
      <TextBlock x:Name="Details" Foreground="White" TextWrapping="Wrap"/>
     </Border>

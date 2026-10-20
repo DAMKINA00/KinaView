@@ -29,12 +29,14 @@ internal static class AdvancedImages
         ResourceLimits.Thread = (uint)Math.Clamp(Environment.ProcessorCount, 1, 4);
     }
 
+    internal static void Initialize() { }
+
     internal static LoadedImage Load(string path)
     {
         string extension = Path.GetExtension(path).ToLowerInvariant();
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         long bytes = file.Length;
-        if (extension == ".gif") return LoadGif(file, bytes);
+        if (extension is ".gif" or ".webp") return LoadAnimation(file, bytes);
         var settings = new MagickReadSettings { FrameCount = 1 };
         bool raw = extension is not (".psd" or ".psb" or ".hdr" or ".exr" or ".webp" or ".heic" or ".heif" or ".avif");
         // TIFF-shaped RAW containers otherwise select their embedded preview instead of LibRaw.
@@ -59,11 +61,11 @@ internal static class AdvancedImages
         return new LoadedImage(hdr ? ToneMap(image) : ToBitmap(image), bytes, 1, Note: note);
     }
 
-    private static LoadedImage LoadGif(Stream file, long bytes)
+    private static LoadedImage LoadAnimation(Stream file, long bytes)
     {
         using var collection = new MagickImageCollection();
         collection.Ping(file);
-        if (collection.Count == 0) throw new InvalidDataException("GIF 프레임이 없습니다.");
+        if (collection.Count == 0) throw new InvalidDataException("애니메이션 프레임이 없습니다.");
         uint width = collection.Max(f => Math.Max(f.Width, f.Page.Width));
         uint height = collection.Max(f => Math.Max(f.Height, f.Page.Height));
         CheckAnimationSize(width, height, collection.Count);
@@ -72,7 +74,12 @@ internal static class AdvancedImages
         // Coalesce applies frame offsets, transparency and restore-background/previous disposal.
         collection.Coalesce();
         CheckAnimationSize(collection[0].Width, collection[0].Height, collection.Count);
-        var frames = collection.Select(f => new AnimationFrame(ToBitmap(f), Delay(f.AnimationDelay, f.AnimationTicksPerSecond))).ToArray();
+        var frames = collection.Select(f =>
+        {
+            if (f.GetColorProfile() != null) f.TransformColorSpace(ColorProfiles.SRGB);
+            else f.ColorSpace = ColorSpace.sRGB;
+            return new AnimationFrame(ToBitmap(f), Delay(f.AnimationDelay, f.AnimationTicksPerSecond));
+        }).ToArray();
         return new LoadedImage(frames[0].Bitmap, bytes, frames.Length, frames.Length > 1 ? frames : null);
     }
 
@@ -81,7 +88,7 @@ internal static class AdvancedImages
     {
         CheckSize(width, height);
         if (count < 1 || count > 2048 || (ulong)width * height * (ulong)count * 4 > 128UL * 1024 * 1024)
-            throw new InvalidDataException("GIF가 재생 메모리 한도(128 MiB / 2048 프레임)를 넘습니다.");
+            throw new InvalidDataException("애니메이션이 재생 메모리 한도(128 MiB / 2048 프레임)를 넘습니다.");
     }
     private static void CheckSize(uint width, uint height)
     {

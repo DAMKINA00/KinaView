@@ -116,7 +116,9 @@ internal static class ComparisonTests
         await b.OpenAsync(files[0]);
         check(b.Error == "" && b.Displayed != null, "Comparison panel recovers from decode failure");
         string gif = Directory.GetFiles(output, "*.gif", SearchOption.AllDirectories).First(p => ImageFiles.Load(p).Animation is { Length: > 1 });
+        string webp = Directory.GetFiles(output, "*.webp", SearchOption.AllDirectories).First(p => ImageFiles.Load(p).Animation is { Length: > 1 });
         var d = window.ComparisonPanes[^1];
+        await d.OpenAsync(webp); check(d.IsAnimating, "Comparison WebP plays continuously");
         await d.OpenAsync(gif); check(d.IsAnimating, "Comparison GIF plays continuously");
         var pending = d.OpenAsync(files[0]); window.RemoveComparisonPane(); await pending;
         check(d.IsDisposed && !d.IsAnimating && d.Displayed == null && window.ComparisonPanes.Count == 3, "Removing a loading pane cancels stale results and animation");

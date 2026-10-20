@@ -23,6 +23,7 @@ public static class App
                 return 1;
             }
         }
+        AdvancedImages.Initialize();
         var app = new Application();
         var window = new MainWindow();
         if (args.Length == 2 && args[0] == "--self-test")

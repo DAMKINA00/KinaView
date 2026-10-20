@@ -12,14 +12,17 @@ namespace KinaView;
 public partial class ComparePane : UserControl, IDisposable
 {
     private readonly SemaphoreSlim decodeGate;
+    private readonly DisplayResizer displayResizer = new();
     private readonly DispatcherTimer timer = new(DispatcherPriority.Render);
     private LoadedImage? loaded;
     private int request, frame, rotation;
-    private bool disposed, fit = true;
+    private bool disposed, fit = true, comicMode;
     private Point? drag;
     private Point dragOffset;
     internal string? FilePath { get; private set; }
     internal BitmapSource? Displayed => Picture.Source as BitmapSource;
+    private BitmapSource? OriginalFrame => loaded?.Animation is { } frames && frame < frames.Length ? frames[frame].Bitmap : loaded?.Bitmap;
+    internal bool ComicViewEnabled => comicMode;
     internal double Zoom { get; private set; } = 1;
     internal bool Selected { get => Selection.IsChecked == true; set => Selection.IsChecked = value; }
     internal bool IsAnimating => timer.IsEnabled;
@@ -43,9 +46,7 @@ public partial class ComparePane : UserControl, IDisposable
         {
             if (loaded?.Animation is not { Length: > 1 } frames || Window.GetWindow(this)?.WindowState == WindowState.Minimized) return;
             frame = (frame + 1) % frames.Length;
-            Picture.Source = frames[frame].Bitmap;
-            timer.Interval = TimeSpan.FromMilliseconds(frames[frame].DelayMilliseconds);
-            RefreshMap();
+            UpdateAnimationFrame();
         };
         Overview.MoveRequested += center => PanRequested?.Invoke(this, center);
     }
@@ -54,7 +55,8 @@ public partial class ComparePane : UserControl, IDisposable
     {
         if (disposed) return;
         int ticket = ++request;
-        timer.Stop(); loaded = null; Picture.Source = null; RefreshMap();
+        timer.Stop(); displayResizer.Clear(); ComicStatus.Visibility = Visibility.Collapsed;
+        loaded = null; Picture.Source = null; RefreshMap();
         Message.Text = "불러오는 중…";
         FilePath = path; Filename.Text = Path.GetFileName(path); Filename.ToolTip = path;
         Details.Text = "";
@@ -84,26 +86,44 @@ public partial class ComparePane : UserControl, IDisposable
 
     internal double FitZoom()
     {
-        if (Displayed is not { } bitmap) return 1;
+        if (OriginalFrame is not { } original) return 1;
         var dpi = VisualTreeHelper.GetDpi(Picture);
-        return ImageFiles.Fit(rotation % 180 == 0 ? bitmap.PixelWidth : bitmap.PixelHeight,
-            rotation % 180 == 0 ? bitmap.PixelHeight : bitmap.PixelWidth, Viewport.ActualWidth * dpi.DpiScaleX, Viewport.ActualHeight * dpi.DpiScaleY);
+        return ImageFiles.Fit(rotation % 180 == 0 ? original.PixelWidth : original.PixelHeight,
+            rotation % 180 == 0 ? original.PixelHeight : original.PixelWidth, Viewport.ActualWidth * dpi.DpiScaleX, Viewport.ActualHeight * dpi.DpiScaleY,
+            comicMode ? double.PositiveInfinity : 16);
     }
     private void ApplySize()
     {
-        if (Displayed is not { } bitmap) return;
+        if (OriginalFrame is not { } original) return;
         if (fit) Zoom = FitZoom();
         var dpi = VisualTreeHelper.GetDpi(Picture);
-        Picture.Width = bitmap.PixelWidth * Zoom / dpi.DpiScaleX; Picture.Height = bitmap.PixelHeight * Zoom / dpi.DpiScaleY;
+        Picture.Width = original.PixelWidth * Zoom / dpi.DpiScaleX; Picture.Height = original.PixelHeight * Zoom / dpi.DpiScaleY;
         Picture.LayoutTransform = new RotateTransform(rotation);
         Stage.MinWidth = Math.Max(0, Viewport.ActualWidth); Stage.MinHeight = Math.Max(0, Viewport.ActualHeight);
         Scale.Content = $"{Zoom * 100:0.##}%";
+        if (!comicMode && !ReferenceEquals(Picture.Source, original)) Picture.Source = original;
         Viewport.UpdateLayout(); RefreshMap();
+        if (comicMode) RequestComicResize(original, loaded?.Animation != null);
         ViewChanged?.Invoke();
+    }
+    private void RequestComicResize(BitmapSource original, bool animated)
+    {
+        int width = Math.Max(1, (int)Math.Round(original.PixelWidth * Zoom));
+        int height = Math.Max(1, (int)Math.Round(original.PixelHeight * Zoom));
+        ComicStatusText.Text = "만화 보기 · 보정 중…";
+        ComicStatus.Visibility = Visibility.Visible;
+        displayResizer.Request(original, width, height, !animated, result =>
+        {
+            if (!comicMode || !ReferenceEquals(OriginalFrame, original)) return;
+            Picture.Source = result.Bitmap;
+            ComicStatusText.Text = result.FallbackReason is { Length: > 0 } ? "만화 보기 · 보정 대체 표시" : "만화 보기 · 보정 완료";
+            ComicStatus.Visibility = Visibility.Visible;
+            RefreshMap();
+        });
     }
     internal void SetZoom(double value, Point center, bool fitValue = false)
     {
-        if (Displayed == null) return;
+        if (OriginalFrame == null) return;
         fit = false; Zoom = fitValue ? value : ImageFiles.RoundZoom(value);
         ApplySize(); MoveTo(center);
     }
@@ -114,10 +134,24 @@ public partial class ComparePane : UserControl, IDisposable
     }
     internal void Rotate()
     {
-        if (Displayed == null) return;
+        if (OriginalFrame == null) return;
         rotation = (rotation + 90) % 360; ApplySize(); MoveTo(new(.5, .5));
     }
     internal void ToggleAnimation() { if (timer.IsEnabled) timer.Stop(); else if (loaded?.Animation is { Length: > 1 }) timer.Start(); }
+    internal void SetComicMode(bool enabled)
+    {
+        comicMode = enabled;
+        if (enabled) fit = true;
+        displayResizer.Clear();
+        if (OriginalFrame is { } original)
+        {
+            Picture.Source = original;
+            if (!enabled) ComicStatus.Visibility = Visibility.Collapsed;
+            ApplySize();
+            if (enabled) MoveTo(new(.5, .5));
+        }
+        else ComicStatus.Visibility = Visibility.Collapsed;
+    }
     internal void ShowInfo(bool show) => Info.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     private void RefreshMap() => Overview.Refresh(Displayed, rotation, Viewport, Displayed == null ? new Size(0, 0) : DisplaySize);
     private void ViewportChanged(object sender, SizeChangedEventArgs e) => ApplySize();
@@ -133,6 +167,14 @@ public partial class ComparePane : UserControl, IDisposable
         Activated?.Invoke(this); ZoomStepRequested?.Invoke(this, e.Delta > 0 ? 1.15 : 1 / 1.15); e.Handled = true;
     }
     private void FitClick(object sender, RoutedEventArgs e) { Activated?.Invoke(this); FitRequested?.Invoke(this); }
+    private void UpdateAnimationFrame()
+    {
+        if (loaded?.Animation is not { } frames) return;
+        Picture.Source = frames[frame].Bitmap;
+        timer.Interval = TimeSpan.FromMilliseconds(frames[frame].DelayMilliseconds);
+        ApplySize();
+        RefreshMap();
+    }
     internal async Task ChooseFileAsync()
     {
         Activated?.Invoke(this);
@@ -166,5 +208,5 @@ public partial class ComparePane : UserControl, IDisposable
     }
     private void PanEnd(object sender, MouseButtonEventArgs e) => Viewport.ReleaseMouseCapture();
     private void PanLost(object sender, MouseEventArgs e) { drag = null; Viewport.Cursor = Cursors.Arrow; }
-    public void Dispose() { disposed = true; request++; timer.Stop(); loaded = null; Picture.Source = null; RefreshMap(); }
+    public void Dispose() { disposed = true; request++; timer.Stop(); displayResizer.Dispose(); loaded = null; Picture.Source = null; RefreshMap(); }
 }
